@@ -1,7 +1,3 @@
-# Embedded Git repositories (manage separately)
-CarAnalyzer/
-car-price-analyzer-frontend/
-
 # Python
 __pycache__/
 *.py[cod]
