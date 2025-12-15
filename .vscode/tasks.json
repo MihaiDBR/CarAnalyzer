@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🔴 Start Backend",
+      "type": "shell",
+      "command": "uvicorn app.main:app --reload",
+      "options": {
+        "cwd": "${workspaceFolder}/car-price-analyzer-backend",
+        "shell": {
+          "executable": "powershell.exe",
+          "args": ["-Command", ".venv/Scripts/Activate.ps1;"]
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🟢 Start Frontend",
+      "type": "shell",
+      "command": "npm start",
+      "options": {
+        "cwd": "${workspaceFolder}/car-price-analyzer-frontend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🚀 Start ALL (Backend + Frontend)",
+      "dependsOn": ["🔴 Start Backend", "🟢 Start Frontend"],
+      "problemMatcher": []
+    }
+  ]
+}
