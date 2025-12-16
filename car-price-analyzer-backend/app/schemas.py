@@ -100,35 +100,34 @@ class ListingResponse(BaseModel):
 
 
 class MarketAnalysisResponse(BaseModel):
-    """Response pentru analiză piață"""
-    total_listings: int
-    price_mean: float
-    price_median: float
-    price_std: float
-    price_min: float
-    price_max: float
-    percentile_25: float
-    percentile_75: float
-    days_on_market_avg: float
-    regional_distribution: dict
+    """Response pentru analiză piață - FLEXIBIL pentru noul sistem"""
+    # Required fields (always present)
+    source: str  # 'database_exact', 'database_similar', 'generic_formula'
+    confidence: int  # 60-95%
+    description: str  # Human-readable description
+    sample_size: int  # Number of listings used (0 for generic)
+
+    # Optional fields (only when database data available)
+    total_listings: Optional[int] = 0
+    price_mean: Optional[float] = 0.0
+    price_median: Optional[float] = 0.0
+    price_std: Optional[float] = 0.0
+    price_min: Optional[float] = 0.0
+    price_max: Optional[float] = 0.0
+    percentile_25: Optional[float] = 0.0
+    percentile_75: Optional[float] = 0.0
+    days_on_market_avg: Optional[float] = 0.0
+    regional_distribution: Optional[dict] = {}
 
     class Config:
         schema_extra = {
             "example": {
-                "total_listings": 123,
-                "price_mean": 15500.50,
-                "price_median": 15000.00,
-                "price_std": 2500.00,
-                "price_min": 8000.00,
-                "price_max": 25000.00,
-                "percentile_25": 12500.00,
-                "percentile_75": 18000.00,
-                "days_on_market_avg": 45.2,
-                "regional_distribution": {
-                    "bucuresti": 45,
-                    "cluj": 23,
-                    "timisoara": 18
-                }
+                "source": "generic_formula",
+                "confidence": 60,
+                "description": "Calcul bazat pe formula standard de depreciere",
+                "sample_size": 0,
+                "total_listings": 0,
+                "price_mean": 0.0
             }
         }
 
