@@ -1,0 +1,6 @@
+Sa creezi profil pentru persoana
+Sa introduca masina serie de sasiu etc
+Sa introduca modificari mecanice si preturi si eventual sa i se ajusteze pretul sau doar sa se tina cont
+Sau doar sa tina minte pentru personal in momentul in care publici anunt
+Sa poti genera automat detalii pentru un anunt tinand cont de masina pe care o ai adaugata in cont si sa ti apara in mod constant un pret in profilul tau
+   

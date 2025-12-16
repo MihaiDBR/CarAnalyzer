@@ -102,15 +102,71 @@ saved_analyses = sqlalchemy.Table(
     sqlalchemy.Column("created_at", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
 )
 
+# Tabel pentru cache-uirea makes din API-uri
+api_makes_cache = sqlalchemy.Table(
+    "api_makes_cache",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("make_name", sqlalchemy.String(100), nullable=False, unique=True),
+    sqlalchemy.Column("make_display", sqlalchemy.String(100)),
+    sqlalchemy.Column("make_country", sqlalchemy.String(50)),
+    sqlalchemy.Column("source", sqlalchemy.String(20)),  # 'carquery', 'nhtsa'
+    sqlalchemy.Column("cached_at", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+    sqlalchemy.Column("updated_at", sqlalchemy.DateTime, onupdate=sqlalchemy.func.now()),
+)
+
+# Tabel pentru cache-uirea models din API-uri
+api_models_cache = sqlalchemy.Table(
+    "api_models_cache",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("make_name", sqlalchemy.String(100), nullable=False),
+    sqlalchemy.Column("model_name", sqlalchemy.String(200), nullable=False),
+    sqlalchemy.Column("model_year_min", sqlalchemy.Integer),
+    sqlalchemy.Column("model_year_max", sqlalchemy.Integer),
+    sqlalchemy.Column("body_type", sqlalchemy.String(50)),
+    sqlalchemy.Column("fuel_type", sqlalchemy.String(50)),
+    sqlalchemy.Column("source", sqlalchemy.String(20)),  # 'carquery', 'nhtsa'
+    sqlalchemy.Column("cached_at", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+    sqlalchemy.Column("updated_at", sqlalchemy.DateTime, onupdate=sqlalchemy.func.now()),
+    sqlalchemy.Index("idx_make_model", "make_name", "model_name"),
+)
+
+# Tabel pentru specificații complete vehicule (cache NHTSA/CarQuery)
+vehicle_specs_cache = sqlalchemy.Table(
+    "vehicle_specs_cache",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("make", sqlalchemy.String(100), nullable=False),
+    sqlalchemy.Column("model", sqlalchemy.String(200), nullable=False),
+    sqlalchemy.Column("year", sqlalchemy.Integer),
+    sqlalchemy.Column("trim", sqlalchemy.String(200)),
+    sqlalchemy.Column("engine", sqlalchemy.String(200)),
+    sqlalchemy.Column("horsepower", sqlalchemy.Integer),
+    sqlalchemy.Column("transmission", sqlalchemy.String(100)),
+    sqlalchemy.Column("drive_type", sqlalchemy.String(50)),
+    sqlalchemy.Column("fuel_type", sqlalchemy.String(50)),
+    sqlalchemy.Column("body_type", sqlalchemy.String(50)),
+    sqlalchemy.Column("doors", sqlalchemy.Integer),
+    sqlalchemy.Column("seats", sqlalchemy.Integer),
+    sqlalchemy.Column("standard_equipment", sqlalchemy.JSON),
+    sqlalchemy.Column("optional_equipment", sqlalchemy.JSON),
+    sqlalchemy.Column("source", sqlalchemy.String(20)),
+    sqlalchemy.Column("source_id", sqlalchemy.String(100)),
+    sqlalchemy.Column("cached_at", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+    sqlalchemy.Column("updated_at", sqlalchemy.DateTime, onupdate=sqlalchemy.func.now()),
+    sqlalchemy.Index("idx_make_model_year", "make", "model", "year"),
+)
+
 # Create engine
 engine = sqlalchemy.create_engine(DATABASE_URL)
 
 # Creare tabele
 def create_tables():
     metadata.create_all(engine)
-    print("✓ Tables created successfully")
+    print("Tables created successfully")
 
 # Drop tabele (folosește cu grijă!)
 def drop_tables():
     metadata.drop_all(engine)
-    print("✓ Tables dropped successfully")
+    print("Tables dropped successfully")

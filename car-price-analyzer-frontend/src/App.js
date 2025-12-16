@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Car, TrendingUp, TrendingDown, DollarSign, Search, CheckCircle, BarChart3, Clock, RefreshCw, Download } from 'lucide-react';
-import { analyzePrice } from './services/api';
+import { analyzePrice, fetchMakes, fetchModels } from './services/api';
 
 function App() {
   const [carData, setCarData] = useState({
@@ -12,10 +12,16 @@ function App() {
     dotari: [],
     locatie: 'bucuresti'
   });
-  
+
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Dynamic data from APIs
+  const [makes, setMakes] = useState([]);
+  const [models, setModels] = useState([]);
+  const [loadingMakes, setLoadingMakes] = useState(false);
+  const [loadingModels, setLoadingModels] = useState(false);
 
   const dotariDisponibile = [
     { id: 'piele', nume: 'Interior piele' },
@@ -32,8 +38,56 @@ function App() {
     { id: 'sport', nume: 'Pachet sport' }
   ];
 
-  const marci = ['Volkswagen', 'BMW', 'Mercedes', 'Audi', 'Skoda', 'Dacia', 'Ford', 'Opel', 'Toyota', 'Honda', 'Mazda'];
   const locatii = ['bucuresti', 'cluj', 'timisoara', 'iasi', 'constanta', 'brasov'];
+
+  // Fetch makes on component mount
+  useEffect(() => {
+    loadMakes();
+  }, []);
+
+  // Fetch models when make or year changes
+  useEffect(() => {
+    if (carData.marca) {
+      loadModels(carData.marca, carData.an);
+    } else {
+      setModels([]);
+      setCarData(prev => ({ ...prev, model: '' }));
+    }
+  }, [carData.marca, carData.an]);
+
+  const loadMakes = async () => {
+    setLoadingMakes(true);
+    try {
+      const makesData = await fetchMakes();
+      setMakes(makesData);
+    } catch (error) {
+      console.error('Error loading makes:', error);
+      setError('Eroare la încărcarea mărcilor. Încearcă din nou.');
+    } finally {
+      setLoadingMakes(false);
+    }
+  };
+
+  const loadModels = async (make, year = null) => {
+    setLoadingModels(true);
+    try {
+      const modelsData = await fetchModels(make, year);
+      setModels(modelsData);
+    } catch (error) {
+      console.error('Error loading models:', error);
+      setModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  const handleMakeChange = (make) => {
+    setCarData(prev => ({
+      ...prev,
+      marca: make,
+      model: '' // Reset model when make changes
+    }));
+  };
 
   const handleDotareToggle = (dotareId) => {
     setCarData(prev => ({
@@ -111,28 +165,44 @@ function App() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Marcă *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marcă * {loadingMakes && <span className="text-xs text-gray-500">(se încarcă...)</span>}
+                  </label>
                   <select
                     value={carData.marca}
-                    onChange={(e) => setCarData({...carData, marca: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    onChange={(e) => handleMakeChange(e.target.value)}
+                    disabled={loadingMakes}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
                   >
-                    <option value="">Selectează</option>
-                    {marci.map(marca => (
-                      <option key={marca} value={marca}>{marca}</option>
+                    <option value="">Selectează marca</option>
+                    {makes.map(make => (
+                      <option key={make.make} value={make.make}>
+                        {make.display}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
-                  <input
-                    type="text"
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Model * {loadingModels && <span className="text-xs text-gray-500">(se încarcă...)</span>}
+                  </label>
+                  <select
                     value={carData.model}
                     onChange={(e) => setCarData({...carData, model: e.target.value})}
-                    placeholder="Golf, Seria 3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  />
+                    disabled={!carData.marca || loadingModels}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {!carData.marca ? 'Selectează mai întâi marca' : 'Selectează modelul'}
+                    </option>
+                    {models.map(model => (
+                      <option key={model.model} value={model.model}>
+                        {model.model}
+                        {model.year_min && model.year_max && ` (${model.year_min}-${model.year_max})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

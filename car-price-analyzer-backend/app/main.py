@@ -6,7 +6,9 @@ import os
 from dotenv import load_dotenv
 
 from app.database import database
-from app.routers import scraping, analysis, listings
+from app.routers import scraping, analysis, listings, vehicles
+from app.integrations.carquery import carquery_client
+from app.integrations.nhtsa import nhtsa_client
 
 load_dotenv()
 
@@ -15,8 +17,12 @@ async def lifespan(app: FastAPI):
     await database.connect()
     print("✓ Database connected")
     yield
+    # Cleanup
     await database.disconnect()
+    await carquery_client.close()
+    await nhtsa_client.close()
     print("✓ Database disconnected")
+    print("✓ API clients closed")
 
 app = FastAPI(
     title="Car Price Analyzer API",
@@ -35,10 +41,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# IMPORTANT - Acestea 3 linii!!!
+# IMPORTANT - Include all routers
 app.include_router(scraping.router, prefix="/api", tags=["Scraping"])
 app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
 app.include_router(listings.router, prefix="/api", tags=["Listings"])
+app.include_router(vehicles.router, tags=["Vehicles"])
 
 @app.get("/")
 async def root():

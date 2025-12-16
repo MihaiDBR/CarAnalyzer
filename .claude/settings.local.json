@@ -7,7 +7,12 @@
       "Bash(git rm:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(mkdir:*)",
+      "Bash(python migrate_database.py:*)",
+      "Bash(timeout 10 python:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)"
     ]
   }
 }
