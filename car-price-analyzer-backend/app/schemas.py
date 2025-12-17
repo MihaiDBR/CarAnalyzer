@@ -13,20 +13,50 @@ from datetime import datetime
 # ============================================
 
 class CarAnalysisRequest(BaseModel):
-    """Request pentru analiză mașină"""
+    """Request pentru analiză mașină - EXTENDED cu filtre OLX"""
     marca: str = Field(..., min_length=2, max_length=50, description="Marca mașinii")
     model: str = Field(..., min_length=1, max_length=100, description="Modelul mașinii")
     an: int = Field(..., ge=1990, le=2025, description="Anul fabricației")
     km: int = Field(..., ge=0, le=1000000, description="Kilometri parcurși")
     combustibil: str = Field(..., description="Tipul de combustibil")
-    dotari: List[str] = Field(default=[], description="Lista dotărilor")
-    locatie: str = Field(default="bucuresti", description="Locația mașinii")
+
+    # NEW FIELDS for smart filtering
+    transmisie: Optional[str] = Field(default=None, description="Transmisie: manuala/automata")
+    tractiune: Optional[str] = Field(default=None, description="Tracțiune: fata/spate/4x4")
+    caroserie: Optional[str] = Field(default=None, description="Caroserie: sedan/hatchback/break/suv/coupe")
 
     @validator('combustibil')
     def validate_combustibil(cls, v):
         allowed = ['benzina', 'diesel', 'electric', 'hybrid', 'gpl']
         if v.lower() not in allowed:
             raise ValueError(f'Combustibil trebuie să fie unul din: {", ".join(allowed)}')
+        return v.lower()
+
+    @validator('transmisie')
+    def validate_transmisie(cls, v):
+        if v is None or v == '':
+            return None
+        allowed = ['manuala', 'automata']
+        if v.lower() not in allowed:
+            raise ValueError(f'Transmisie trebuie să fie: manuala sau automata')
+        return v.lower()
+
+    @validator('tractiune')
+    def validate_tractiune(cls, v):
+        if v is None or v == '':
+            return None
+        allowed = ['fata', 'spate', '4x4']
+        if v.lower() not in allowed:
+            raise ValueError(f'Tracțiune trebuie să fie: fata, spate sau 4x4')
+        return v.lower()
+
+    @validator('caroserie')
+    def validate_caroserie(cls, v):
+        if v is None or v == '':
+            return None
+        allowed = ['sedan', 'hatchback', 'break', 'coupe', 'suv', 'cabrio']
+        if v.lower() not in allowed:
+            raise ValueError(f'Caroserie trebuie să fie unul din: {", ".join(allowed)}')
         return v.lower()
 
     @validator('marca', 'model')
@@ -38,13 +68,14 @@ class CarAnalysisRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "marca": "Volkswagen",
-                "model": "Golf 7",
-                "an": 2018,
-                "km": 85000,
+                "marca": "BMW",
+                "model": "Seria 3",
+                "an": 2013,
+                "km": 200000,
                 "combustibil": "diesel",
-                "dotari": ["piele", "navigatie", "xenon"],
-                "locatie": "bucuresti"
+                "transmisie": "automata",
+                "tractiune": "fata",
+                "caroserie": "sedan"
             }
         }
 

@@ -62,10 +62,17 @@ listings = sqlalchemy.Table(
     sqlalchemy.Column("url", sqlalchemy.String(500), unique=True, nullable=False),
     sqlalchemy.Column("marca", sqlalchemy.String(50)),
     sqlalchemy.Column("model", sqlalchemy.String(100)),
+    sqlalchemy.Column("model_series", sqlalchemy.String(50)),  # NEW: "Seria 1", "Golf", etc.
+    sqlalchemy.Column("model_variant", sqlalchemy.String(50)),  # NEW: "GTI", "R", "M", "AMG", etc.
     sqlalchemy.Column("an", sqlalchemy.Integer),
     sqlalchemy.Column("km", sqlalchemy.Integer),
     sqlalchemy.Column("pret", sqlalchemy.Float),
     sqlalchemy.Column("combustibil", sqlalchemy.String(20)),
+    sqlalchemy.Column("putere_cp", sqlalchemy.Integer),  # NEW: Putere în CP
+    sqlalchemy.Column("capacitate_cilindrica", sqlalchemy.Integer),  # NEW: cm3
+    sqlalchemy.Column("transmisie", sqlalchemy.String(20)),  # NEW: "manuala", "automata"
+    sqlalchemy.Column("tractiune", sqlalchemy.String(20)),  # NEW: "fata", "spate", "4x4"
+    sqlalchemy.Column("caroserie", sqlalchemy.String(30)),  # NEW: "hatchback", "sedan", "break", "coupe", "suv"
     sqlalchemy.Column("locatie", sqlalchemy.String(100)),
     sqlalchemy.Column("dotari", sqlalchemy.JSON),
     sqlalchemy.Column("imagini", sqlalchemy.JSON),
@@ -73,8 +80,10 @@ listings = sqlalchemy.Table(
     sqlalchemy.Column("telefon", sqlalchemy.String(20)),
     sqlalchemy.Column("data_publicare", sqlalchemy.DateTime),
     sqlalchemy.Column("data_scraping", sqlalchemy.DateTime, server_default=sqlalchemy.func.now()),
+    sqlalchemy.Column("data_scrape", sqlalchemy.DateTime),  # Alias for compatibility
     sqlalchemy.Column("este_activ", sqlalchemy.Boolean, default=True),
     sqlalchemy.Column("vizualizari", sqlalchemy.Integer, default=0),
+    sqlalchemy.Column("zile_pe_piata", sqlalchemy.Integer, default=0),  # For compatibility
 )
 
 # Tabel pentru istoricul prețurilor

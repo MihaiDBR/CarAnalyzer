@@ -64,7 +64,28 @@ export const getEquipment = async () => {
   return response.data;
 };
 
-// New vehicle API endpoints
+// New catalog API endpoints (hierarchical brands/models)
+export const fetchCatalogBrands = async () => {
+  const response = await api.get('/api/catalog/brands');
+  return response.data.brands || [];
+};
+
+export const fetchCatalogModels = async (marca) => {
+  const response = await api.get(`/api/catalog/models/${marca}`);
+  return response.data.series || [];
+};
+
+export const fetchYearRange = async (marca, modelSeries) => {
+  const response = await api.get(`/api/catalog/year-range/${marca}/${modelSeries}`);
+  return response.data;
+};
+
+export const fetchModelVariants = async (marca, modelSeries) => {
+  const response = await api.get(`/api/catalog/variants/${marca}/${modelSeries}`);
+  return response.data;
+};
+
+// Legacy vehicle API endpoints (kept for backwards compatibility)
 export const fetchMakes = async (forceRefresh = false) => {
   const response = await api.get('/api/vehicles/makes', {
     params: { force_refresh: forceRefresh }

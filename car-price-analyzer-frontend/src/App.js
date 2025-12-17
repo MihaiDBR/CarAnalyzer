@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Car, TrendingUp, TrendingDown, DollarSign, Search, CheckCircle, BarChart3, Clock, RefreshCw, Download } from 'lucide-react';
-import { analyzePrice, fetchMakes, fetchModels } from './services/api';
+import { analyzePrice, fetchCatalogBrands, fetchCatalogModels } from './services/api';
 
 function App() {
   const [carData, setCarData] = useState({
@@ -9,92 +9,67 @@ function App() {
     an: '',
     km: '',
     combustibil: 'benzina',
-    dotari: [],
-    locatie: 'bucuresti'
+    transmisie: '',
+    tractiune: '',
+    caroserie: ''
   });
 
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Dynamic data from APIs
-  const [makes, setMakes] = useState([]);
-  const [models, setModels] = useState([]);
-  const [loadingMakes, setLoadingMakes] = useState(false);
+  // Dynamic catalog data
+  const [brands, setBrands] = useState([]);
+  const [modelSeries, setModelSeries] = useState([]);
+  const [loadingBrands, setLoadingBrands] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
 
-  const dotariDisponibile = [
-    { id: 'piele', nume: 'Interior piele' },
-    { id: 'navigatie', nume: 'Sistem navigație' },
-    { id: 'xenon', nume: 'Faruri Xenon/LED' },
-    { id: 'senzori', nume: 'Senzori parcare' },
-    { id: 'camera', nume: 'Cameră marsarier' },
-    { id: 'scaune', nume: 'Scaune încălzite' },
-    { id: 'clima', nume: 'Climatronic' },
-    { id: 'jante', nume: 'Jante aliaj' },
-    { id: 'cruise', nume: 'Cruise control' },
-    { id: 'keyless', nume: 'Keyless entry' },
-    { id: 'trapa', nume: 'Trapă panoramic' },
-    { id: 'sport', nume: 'Pachet sport' }
-  ];
-
-  const locatii = ['bucuresti', 'cluj', 'timisoara', 'iasi', 'constanta', 'brasov'];
-
-  // Fetch makes on component mount
+  // Fetch brands on component mount
   useEffect(() => {
-    loadMakes();
+    loadBrands();
   }, []);
 
-  // Fetch models when make or year changes
+  // Fetch model series when brand changes
   useEffect(() => {
     if (carData.marca) {
-      loadModels(carData.marca, carData.an);
+      loadModelSeries(carData.marca);
     } else {
-      setModels([]);
+      setModelSeries([]);
       setCarData(prev => ({ ...prev, model: '' }));
     }
-  }, [carData.marca, carData.an]);
+  }, [carData.marca]);
 
-  const loadMakes = async () => {
-    setLoadingMakes(true);
+  const loadBrands = async () => {
+    setLoadingBrands(true);
     try {
-      const makesData = await fetchMakes();
-      setMakes(makesData);
+      const brandsData = await fetchCatalogBrands();
+      setBrands(brandsData);
     } catch (error) {
-      console.error('Error loading makes:', error);
+      console.error('Error loading brands:', error);
       setError('Eroare la încărcarea mărcilor. Încearcă din nou.');
     } finally {
-      setLoadingMakes(false);
+      setLoadingBrands(false);
     }
   };
 
-  const loadModels = async (make, year = null) => {
+  const loadModelSeries = async (marca) => {
     setLoadingModels(true);
     try {
-      const modelsData = await fetchModels(make, year);
-      setModels(modelsData);
+      const modelsData = await fetchCatalogModels(marca);
+      setModelSeries(modelsData);
     } catch (error) {
       console.error('Error loading models:', error);
-      setModels([]);
+      setModelSeries([]);
     } finally {
       setLoadingModels(false);
     }
   };
 
-  const handleMakeChange = (make) => {
+  const handleBrandChange = (brand) => {
     setCarData(prev => ({
       ...prev,
-      marca: make,
-      model: '' // Reset model when make changes
-    }));
-  };
-
-  const handleDotareToggle = (dotareId) => {
-    setCarData(prev => ({
-      ...prev,
-      dotari: prev.dotari.includes(dotareId)
-        ? prev.dotari.filter(d => d !== dotareId)
-        : [...prev.dotari, dotareId]
+      marca: brand,
+      model: ''
     }));
   };
 
@@ -106,10 +81,10 @@ function App() {
 
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await analyzePrice(carData);
-      
+
       setAnalysis({
         pricing: {
           pretRapid: result.pret_rapid,
@@ -120,7 +95,7 @@ function App() {
         valoreDotari: result.valoare_dotari,
         marketData: result.market_data
       });
-      
+
     } catch (error) {
       console.error('Eroare:', error);
       setError('Eroare la analiză: ' + (error.response?.data?.detail || error.message));
@@ -131,13 +106,13 @@ function App() {
 
   const exportData = () => {
     if (!analysis) return;
-    
+
     const exportObj = {
       masina: carData,
       analiza: analysis,
       data: new Date().toISOString()
     };
-    
+
     const dataStr = JSON.stringify(exportObj, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -155,29 +130,31 @@ function App() {
             <Car className="w-12 h-12 text-indigo-600" />
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Analizor Preț Mașini</h1>
           </div>
-          <p className="text-gray-600">Analiză profesională bazată pe date reale din piață</p>
+          <p className="text-gray-600">Analiză profesională bazată pe date reale din piața OLX</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">Date Mașină</h2>
-            
+
             <div className="space-y-4">
+              {/* Brand and Model Selection */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Marcă * {loadingMakes && <span className="text-xs text-gray-500">(se încarcă...)</span>}
+                    Marcă * {loadingBrands && <span className="text-xs text-gray-500">(se încarcă...)</span>}
                   </label>
                   <select
                     value={carData.marca}
-                    onChange={(e) => handleMakeChange(e.target.value)}
-                    disabled={loadingMakes}
+                    onChange={(e) => handleBrandChange(e.target.value)}
+                    disabled={loadingBrands}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
                   >
                     <option value="">Selectează marca</option>
-                    {makes.map(make => (
-                      <option key={make.make} value={make.make}>
-                        {make.display}
+                    {brands.map(brand => (
+                      <option key={brand.value} value={brand.value}>
+                        {brand.label}
+                        {brand.isTop ? ' ⭐' : ''}
                       </option>
                     ))}
                   </select>
@@ -196,17 +173,17 @@ function App() {
                     <option value="">
                       {!carData.marca ? 'Selectează mai întâi marca' : 'Selectează modelul'}
                     </option>
-                    {models.map(model => (
-                      <option key={model.model} value={model.model}>
-                        {model.model}
-                        {model.year_min && model.year_max && ` (${model.year_min}-${model.year_max})`}
+                    {modelSeries.map(series => (
+                      <option key={series.series} value={series.series}>
+                        {series.series}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              {/* Year and KM */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">An *</label>
                   <input
@@ -214,6 +191,8 @@ function App() {
                     value={carData.an}
                     onChange={(e) => setCarData({...carData, an: e.target.value})}
                     placeholder="2020"
+                    min="1990"
+                    max="2025"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -225,57 +204,75 @@ function App() {
                     value={carData.km}
                     onChange={(e) => setCarData({...carData, km: e.target.value})}
                     placeholder="100000"
+                    min="0"
+                    max="1000000"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
+              </div>
 
+              {/* Fuel Type and Transmission */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Locație</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Combustibil *</label>
                   <select
-                    value={carData.locatie}
-                    onChange={(e) => setCarData({...carData, locatie: e.target.value})}
+                    value={carData.combustibil}
+                    onChange={(e) => setCarData({...carData, combustibil: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   >
-                    {locatii.map(loc => (
-                      <option key={loc} value={loc}>{loc.charAt(0).toUpperCase() + loc.slice(1)}</option>
-                    ))}
+                    <option value="benzina">Benzină</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="electric">Electric</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="gpl">GPL</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Transmisie</label>
+                  <select
+                    value={carData.transmisie}
+                    onChange={(e) => setCarData({...carData, transmisie: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Toate</option>
+                    <option value="manuala">Manuală</option>
+                    <option value="automata">Automată</option>
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Combustibil</label>
-                <select
-                  value={carData.combustibil}
-                  onChange={(e) => setCarData({...carData, combustibil: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="benzina">Benzină</option>
-                  <option value="diesel">Diesel</option>
-                  <option value="electric">Electric</option>
-                  <option value="hybrid">Hybrid</option>
-                </select>
-              </div>
+              {/* Body Type and Drivetrain */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Caroserie</label>
+                  <select
+                    value={carData.caroserie}
+                    onChange={(e) => setCarData({...carData, caroserie: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Toate</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="hatchback">Hatchback</option>
+                    <option value="break">Break</option>
+                    <option value="suv">SUV</option>
+                    <option value="coupe">Coupe</option>
+                    <option value="cabrio">Cabrio</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Dotări opționale ({carData.dotari.length} selectate)
-                </label>
-                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto bg-gray-50 p-3 rounded-lg">
-                  {dotariDisponibile.map(dotare => (
-                    <label
-                      key={dotare.id}
-                      className="flex items-center gap-2 p-2 rounded hover:bg-white cursor-pointer transition"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={carData.dotari.includes(dotare.id)}
-                        onChange={() => handleDotareToggle(dotare.id)}
-                        className="w-4 h-4 text-indigo-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">{dotare.nume}</span>
-                    </label>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tracțiune</label>
+                  <select
+                    value={carData.tractiune}
+                    onChange={(e) => setCarData({...carData, tractiune: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Toate</option>
+                    <option value="fata">Față</option>
+                    <option value="spate">Spate</option>
+                    <option value="4x4">4x4 (AWD)</option>
+                  </select>
                 </div>
               </div>
 
@@ -293,7 +290,7 @@ function App() {
                 {loading ? (
                   <>
                     <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Se analizează...</span>
+                    <span>Se analizează... (poate dura 10-30s)</span>
                   </>
                 ) : (
                   <>
@@ -318,14 +315,31 @@ function App() {
                 </button>
               )}
             </div>
-            
+
             {!analysis ? (
               <div className="flex flex-col items-center justify-center h-96 text-gray-400">
                 <DollarSign className="w-20 h-20 mb-4" />
-                <p className="text-center">Completează datele și analizează<br/>pentru recomandări personalizate</p>
+                <p className="text-center">Completează datele și analizează<br/>pentru recomandări personalizate din piața reală</p>
+                <p className="text-xs text-center mt-4 text-gray-500">Prima analiză poate dura mai mult (10-30s)<br/>pentru că se face scraping automat pe OLX</p>
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Market Data Info Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-start gap-2">
+                    <BarChart3 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-blue-900 mb-1">
+                        {analysis.marketData.description}
+                      </p>
+                      <p className="text-blue-700">
+                        Încredere: {analysis.marketData.confidence}% •
+                        Anunțuri: {analysis.marketData.sample_size}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -340,6 +354,7 @@ function App() {
                     €{Math.round(analysis.pricing.pretRapid.valoare).toLocaleString()}
                   </div>
                   <p className="text-sm text-red-700">{analysis.pricing.pretRapid.timp}</p>
+                  <p className="text-xs text-red-600 mt-1">{analysis.pricing.pretRapid.descriere}</p>
                 </div>
 
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 ring-2 ring-green-400">
@@ -356,6 +371,7 @@ function App() {
                     €{Math.round(analysis.pricing.pretOptim.valoare).toLocaleString()}
                   </div>
                   <p className="text-sm text-green-700">{analysis.pricing.pretOptim.timp}</p>
+                  <p className="text-xs text-green-600 mt-1">{analysis.pricing.pretOptim.descriere}</p>
                 </div>
 
                 <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg p-4">
@@ -372,6 +388,7 @@ function App() {
                     €{Math.round(analysis.pricing.pretNegociere.valoare).toLocaleString()}
                   </div>
                   <p className="text-sm text-blue-700">{analysis.pricing.pretNegociere.timp}</p>
+                  <p className="text-xs text-blue-600 mt-1">{analysis.pricing.pretNegociere.descriere}</p>
                 </div>
 
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg p-4">
@@ -388,12 +405,13 @@ function App() {
                     €{Math.round(analysis.pricing.pretMaxim.valoare).toLocaleString()}
                   </div>
                   <p className="text-sm text-purple-700">{analysis.pricing.pretMaxim.timp}</p>
+                  <p className="text-xs text-purple-600 mt-1">{analysis.pricing.pretMaxim.descriere}</p>
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                     <BarChart3 className="w-5 h-5" />
-                    Date Piață
+                    Statistici Piață
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
@@ -404,16 +422,26 @@ function App() {
                       <span className="text-gray-600">Total anunțuri:</span>
                       <span className="font-semibold text-gray-800 ml-2">{analysis.marketData.total_listings}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-600">Preț median:</span>
-                      <span className="font-semibold text-gray-800 ml-2">€{Math.round(analysis.marketData.price_median).toLocaleString()}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Range piață:</span>
-                      <span className="font-semibold text-gray-800 ml-2">
-                        €{Math.round(analysis.marketData.price_min).toLocaleString()} - €{Math.round(analysis.marketData.price_max).toLocaleString()}
-                      </span>
-                    </div>
+                    {analysis.marketData.price_median > 0 && (
+                      <>
+                        <div>
+                          <span className="text-gray-600">Preț median:</span>
+                          <span className="font-semibold text-gray-800 ml-2">€{Math.round(analysis.marketData.price_median).toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Preț mediu:</span>
+                          <span className="font-semibold text-gray-800 ml-2">€{Math.round(analysis.marketData.price_mean).toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
+                    {analysis.marketData.price_min > 0 && analysis.marketData.price_max > 0 && (
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Range piață:</span>
+                        <span className="font-semibold text-gray-800 ml-2">
+                          €{Math.round(analysis.marketData.price_min).toLocaleString()} - €{Math.round(analysis.marketData.price_max).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
